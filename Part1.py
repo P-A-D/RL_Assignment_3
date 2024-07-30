@@ -128,7 +128,7 @@ class Sarsa:
 class QLearn:
     def __init__(self, alpha):
         self.alpha = alpha
-        self.action_value_func = np.random.random((5 * 5, 4))  # random sample from uniform distribution in [0, 1)
+        self.action_value_func = -np.random.random((5 * 5, 4))  # random sample from uniform distribution in [0, 1)
         self.action_value_func[0, :] = 0  # terminal state
         self.action_value_func[4, :] = 0  # terminal state
         self.policy = None
@@ -143,13 +143,13 @@ class QLearn:
                 action = select_action(self.action_value_func, state, epsilon)
                 next_state, reward = find_next_state(state, action)
                 history.append(reward)
+                self.action_value_func[state, action] += self.alpha * (reward + discount*self.action_value_func[next_state, :].max() - self.action_value_func[state, action])
                 if next_state in [0, 4]:
                     break
-                self.action_value_func[state, action] += self.alpha * (reward + discount*np.argmax(self.action_value_func[next_state, :]) - self.action_value_func[state, action])
                 state = next_state
                 step_num += 1
             self.reward_sums.append(sum(history))
-            print(f"Episode {i} ended after {step_num} steps.")
+            # print(f"Episode {i} ended after {step_num} steps.")
         self.policy = np.argmax(self.action_value_func, axis=1)
         plot_reward_pattern(self.reward_sums)
         print(self.policy.reshape((5, 5)))
@@ -157,8 +157,8 @@ class QLearn:
 
 
 if __name__ == '__main__':
-    agent = QLearn(alpha=0.1)
-    policy = agent.learn(epsilon=0.1, episode_count=10, discount=0.95)
+    agent = QLearn(alpha=0.25)
+    policy = agent.learn(epsilon=0.25, episode_count=10000, discount=0.95)
     pass
-    # todo: plot the trajectory for the agent in the report
+    # todo: check with others for the similarity of q-learning and sarsa. which is better? why?
 
