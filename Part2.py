@@ -106,6 +106,15 @@ def feature_scheme(count):
         features[:, i] = features[:, i]/features[:, i].max()
     return features, np.random.random(count) - 0.5
 
+
+def run_n(algorithm, n, alpha, w_size, discount, episodes, max_episode_length):
+    value_functions = []
+    for i in range(n):
+        agent = algorithm(alpha, w_size)
+        value_functions.append(agent.learn(discount=discount, episodes=episodes, max_episode_length=max_episode_length))
+    val_func = sum(value_functions)/n
+    visualize_results(val_func, title=f"Value function averaged over {n} runs.")
+
 # =============================================================================================================
 # ================================================   Part 1   =================================================
 # =============================================================================================================
@@ -117,7 +126,6 @@ For every s, we have a v(s) and an approximation of it as v(s, w) where w is a v
 class GradientMonteCarlo:
     def __init__(self, alpha=0.5, w_size=2):
         self.alpha = alpha
-        self.value_function = np.random.random(49)
         self.features, self.w = feature_scheme(w_size)
 
     def approximate_s(self, state=None):
@@ -131,7 +139,7 @@ class GradientMonteCarlo:
     def get_w_gradient(self, state):
         return self.features[state, :]
 
-    def learn(self, discount=0.95, episodes=100000, max_episode_length=2500):
+    def learn(self, discount=1, episodes=100000, max_episode_length=2500):
         for _ in range(episodes):
             initial_state = 24
             initial_action = np.random.choice(range(4))
@@ -212,11 +220,13 @@ class PolicyIteration:
 
 
 if __name__ == '__main__':
-    agent = GradientMonteCarlo(alpha=0.1, w_size=10)
-    v_func = agent.learn(discount=1, episodes=100000, max_episode_length=14)
-    visualize_results(v_func, "Gradient Monte Carlo value function estimation")
-    print(v_func)
-    print(agent.w)
-    print(agent.features)
-
+    # agent = GradientMonteCarlo(alpha=0.1, w_size=10)
+    # v_func = agent.learn(discount=1, episodes=100000, max_episode_length=14)
+    # visualize_results(v_func, "Gradient Monte Carlo value function estimation")
+    # print(v_func)
+    # print(agent.w)
+    # print(agent.features)
+    run_n(GradientMonteCarlo, n=10, alpha=0.1, w_size=2, discount=1, episodes=100000, max_episode_length=12)
+    # a = [np.array([1, 2]), np.array([4, 5])]
+    # print(mea(a))
     pass
