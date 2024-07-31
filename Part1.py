@@ -75,15 +75,25 @@ def select_action(action_value_function, state, epsilon=None):
         return np.argmax(action_value_function[state, :]) if np.random.random() > epsilon else np.random.choice([0, 1, 2, 3])
 
 
-def plot_reward_pattern(sequence):
+def plot_reward_pattern(sequence, title=None):
     plt.figure()
     plt.grid(zorder=0)
-    plt.title("Reward patterns")
+    plt.title(f"Reward patterns{' - ' + title if title is not None else None}")
     plt.xlabel("Episode number")
     plt.ylabel("Accumulated reward")
     # plt.axhline(y=0, color='r', zorder=2)
     plt.plot(sequence, zorder=3)
     plt.show()
+
+
+def run_n(algorithm, n, epsilon, alpha, episode_count, discount, title):
+    accumulated_rewards = []
+    for i in range(n):
+        agent = algorithm(alpha=alpha)
+        agent.learn(epsilon=epsilon, episode_count=episode_count, discount=discount, plot=False)
+        accumulated_rewards.append(np.array(agent.reward_sums))
+    mean_acc_rewards = sum(accumulated_rewards) / n
+    plot_reward_pattern(mean_acc_rewards, title=title)
 
 
 # =============================================================================================================
@@ -100,7 +110,7 @@ class Sarsa:
         self.policy = np.random.randint(0, 4, size=25)
         self.reward_sums = []
 
-    def learn(self, epsilon, episode_count=100000, discount=0.95):
+    def learn(self, epsilon, episode_count=100000, discount=0.95, plot=True):
         for i in range(episode_count):
             history = []
             state = 20
@@ -119,8 +129,9 @@ class Sarsa:
             self.reward_sums.append(sum(history))
             # print(f"Episode {i} ended after {step_num} steps.")
         self.policy = np.argmax(self.action_value_func, axis=1)
-        plot_reward_pattern(self.reward_sums)
-        print(self.policy.reshape((5, 5)))
+        if plot:
+            plot_reward_pattern(self.reward_sums)
+            print(self.policy.reshape((5, 5)))
         return self.policy.reshape((5, 5))  # returns the policy
 
 
@@ -136,7 +147,7 @@ class QLearn:
         self.policy = None
         self.reward_sums = []
 
-    def learn(self, epsilon, episode_count=100000, discount=0.95):
+    def learn(self, epsilon, episode_count=100000, discount=0.95, plot=True):
         for i in range(episode_count):
             history = []
             state = 20
@@ -153,15 +164,18 @@ class QLearn:
             self.reward_sums.append(sum(history))
             # print(f"Episode {i} ended after {step_num} steps.")
         self.policy = np.argmax(self.action_value_func, axis=1)
-        plot_reward_pattern(self.reward_sums)
-        print(self.policy.reshape((5, 5)))
+        if plot:
+            plot_reward_pattern(self.reward_sums)
+            print(self.policy.reshape((5, 5)))
         return self.policy.reshape((5, 5))  # returns the policy
 
 
 if __name__ == '__main__':
-    agent = Sarsa(alpha=0.5)
-    policy = agent.learn(epsilon=0.1, episode_count=200, discount=0.95)
-    pass
+    # agent = Sarsa(alpha=0.5)
+    # policy = agent.learn(epsilon=0.1, episode_count=200, discount=0.95)
+    # pass
+    run_n(Sarsa, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Sarsa")
+    run_n(QLearn, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Q-Learning")
     # todo: check with others for the similarity of q-learning and sarsa. which is better? why?
     # todo: check to see if the problem has to be solved undiscounted (gamma = 1)
     # todo: try larger values of alpha (0.5) as well

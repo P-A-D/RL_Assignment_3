@@ -130,6 +130,8 @@ class GradientMonteCarlo:
 
     def approximate_s(self, state=None):
         res = (self.features * self.w).sum(axis=1)
+        # res[6] = 1
+        # res[42] = -1
         # print(res)
         if state is None:
             return res
@@ -175,11 +177,39 @@ class GradientMonteCarlo:
 
 
 class SGTD:
-    def __init__(self):
-        pass
+    def __init__(self, alpha=0.5, w_size=2):
+        self.alpha = alpha
+        self.features, self.w = feature_scheme(w_size)
 
-    def learn(self):
-        pass
+    def approximate_s(self, state=None):
+        res = (self.features * self.w).sum(axis=1)
+        # res[6] = 1
+        # res[42] = -1
+        # print(res)
+        if state is None:
+            return res
+        else:
+            return res[state]
+
+    def get_w_gradient(self, state):
+        return self.features[state, :]
+
+    def learn(self, discount=1, episodes=100000, max_episode_length=2500):
+        for _ in range(episodes):
+            state = 24
+            steps = 0
+            while True:
+                steps += 1
+                action = np.random.choice(range(4))
+                next_state, reward = find_next_state(state, action)
+                # print(self.approximate_s(state=next_state), next_state)
+                self.w += self.alpha * (reward + discount * self.approximate_s(state=next_state) - self.approximate_s(state=state)) * self.get_w_gradient(state=state)
+                state = next_state
+                # if next_state in [6, 42] or steps > max_episode_length:
+                if next_state in [6, 42]:
+                #     print(reward)
+                    break
+        return self.approximate_s()
 
 
 # =============================================================================================================
@@ -226,7 +256,12 @@ if __name__ == '__main__':
     # print(v_func)
     # print(agent.w)
     # print(agent.features)
-    run_n(GradientMonteCarlo, n=10, alpha=0.1, w_size=2, discount=1, episodes=100000, max_episode_length=12)
+    # run_n(GradientMonteCarlo, n=10, alpha=0.1, w_size=2, discount=1, episodes=100000, max_episode_length=12)
     # a = [np.array([1, 2]), np.array([4, 5])]
     # print(mea(a))
+    # agent = SGTD(alpha=0.1, w_size=2)
+    # v_func = agent.learn(discount=1, episodes=1000, max_episode_length=20)
+    # visualize_results(v_func, "Semi-gradient TD(0) value function estimation")
+    # print(v_func)
+    run_n(SGTD, n=100, alpha=0.1, w_size=2, discount=1, episodes=1000, max_episode_length=12)
     pass
