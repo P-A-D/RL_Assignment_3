@@ -178,8 +178,4 @@ if __name__ == '__main__':
     pass
     # run_n(Sarsa, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Sarsa")
     # run_n(QLearn, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Q-Learning")
-    # todo: check with others for the similarity of q-learning and sarsa. which is better? why?
-    # todo: check to see if the problem has to be solved undiscounted (gamma = 1)
-    # todo: try larger values of alpha (0.5) as well
-    # 
 

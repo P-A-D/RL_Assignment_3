@@ -45,7 +45,7 @@ def visualize_results(vector, title):
     plt.show()
 
 
-def find_next_state(state, action):  # todo: this needs a fix
+def find_next_state(state, action):
     """
     returns a pair of (next state, generated reward) given the current state and action.
     """
@@ -265,3 +265,4 @@ if __name__ == '__main__':
     # print(v_func)
     run_n(SGTD, n=100, alpha=0.1, w_size=2, discount=1, episodes=1000, max_episode_length=12)
     pass
+    # todo: fix the policy iteration to put it in runs2
