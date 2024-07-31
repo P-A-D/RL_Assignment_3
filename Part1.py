@@ -78,10 +78,12 @@ def select_action(action_value_function, state, epsilon=None):
 def plot_reward_pattern(sequence, title=None):
     plt.figure()
     plt.grid(zorder=0)
-    plt.title(f"Reward patterns{' - ' + title if title is not None else None}")
+    if title is not None:
+        plt.title(f"Reward patterns{' - ' + title}")
+    else:
+        plt.title("Reward patterns")
     plt.xlabel("Episode number")
     plt.ylabel("Accumulated reward")
-    # plt.axhline(y=0, color='r', zorder=2)
     plt.plot(sequence, zorder=3)
     plt.show()
 
@@ -171,11 +173,11 @@ class QLearn:
 
 
 if __name__ == '__main__':
-    # agent = Sarsa(alpha=0.5)
-    # policy = agent.learn(epsilon=0.1, episode_count=200, discount=0.95)
-    # pass
-    run_n(Sarsa, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Sarsa")
-    run_n(QLearn, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Q-Learning")
+    agent = Sarsa(alpha=0.5)
+    policy = agent.learn(epsilon=0.1, episode_count=200, discount=0.95)
+    pass
+    # run_n(Sarsa, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Sarsa")
+    # run_n(QLearn, n=100, epsilon=0.1, alpha=0.5, episode_count=200, discount=1, title="Q-Learning")
     # todo: check with others for the similarity of q-learning and sarsa. which is better? why?
     # todo: check to see if the problem has to be solved undiscounted (gamma = 1)
     # todo: try larger values of alpha (0.5) as well
