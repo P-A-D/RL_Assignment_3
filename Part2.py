@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 - Problem objectives:
     - exact value function of random walk
     - random walk value function through 
-        - Monte Carlo
+        - Gradient Monte Carlo
         - semi-gradient TD(0) 
 
 - Problem constrains:
@@ -107,11 +107,11 @@ def feature_scheme(count):
     return features, np.random.random(count) - 0.5
 
 
-def run_n(algorithm, n, alpha, w_size, discount, episodes, max_episode_length):
+def run_n(algorithm, n, alpha, w_size, discount, episodes):
     value_functions = []
     for i in range(n):
         agent = algorithm(alpha, w_size)
-        value_functions.append(agent.learn(discount=discount, episodes=episodes, max_episode_length=max_episode_length))
+        value_functions.append(agent.learn(discount=discount, episodes=episodes))
     val_func = sum(value_functions)/n
     visualize_results(val_func, title=f"Value function averaged over {n} runs.")
 
@@ -130,8 +130,8 @@ class GradientMonteCarlo:
 
     def approximate_s(self, state=None):
         res = (self.features * self.w).sum(axis=1)
-        # res[6] = 1
-        # res[42] = -1
+        # res[6] = 0
+        # res[42] = 0
         # print(res)
         if state is None:
             return res
@@ -141,7 +141,7 @@ class GradientMonteCarlo:
     def get_w_gradient(self, state):
         return self.features[state, :]
 
-    def learn(self, discount=1, episodes=100000, max_episode_length=2500):
+    def learn(self, discount=1, episodes=100000):
         for _ in range(episodes):
             initial_state = 24
             initial_action = np.random.choice(range(4))
@@ -154,21 +154,21 @@ class GradientMonteCarlo:
                 steps += 1
                 next_state, reward = find_next_state(state_sequence[-1], action_sequence[-1])
                 reward_sequence.append(reward)
-                if next_state in [6, 42] or steps > max_episode_length:
-                # if next_state in [6, 42]:
-                    # print(reward)
-                    break
                 state_sequence.append(next_state)
+                if next_state in [6, 42]:
+                    break
                 action_sequence.append(np.random.choice(range(4)))
 
             # updating w
-            g = 0
-            for i in range(len(reward_sequence) - 1, -1, -1):
+            g = reward_sequence[-1]
+            for i in range(len(reward_sequence) - 2, -1, -1):
                 g = g * discount + reward_sequence[i]
                 s_t = state_sequence[i]
-                # print(g, s_t, self.approximate_s(s_t), reward_sequence[i])
                 self.w += self.alpha*(g - self.approximate_s(state=s_t)) * self.get_w_gradient(state=s_t)
-        return self.approximate_s()
+        vec = self.approximate_s()
+        vec[6] = 1
+        vec[42] = -1
+        return vec
 
 
 # =============================================================================================================
@@ -183,8 +183,8 @@ class SGTD:
 
     def approximate_s(self, state=None):
         res = (self.features * self.w).sum(axis=1)
-        # res[6] = 1
-        # res[42] = -1
+        res[6] = 0
+        res[42] = 0
         # print(res)
         if state is None:
             return res
@@ -194,7 +194,7 @@ class SGTD:
     def get_w_gradient(self, state):
         return self.features[state, :]
 
-    def learn(self, discount=1, episodes=100000, max_episode_length=2500):
+    def learn(self, discount=1, episodes=100000):
         for _ in range(episodes):
             state = 24
             steps = 0
@@ -202,14 +202,15 @@ class SGTD:
                 steps += 1
                 action = np.random.choice(range(4))
                 next_state, reward = find_next_state(state, action)
-                # print(self.approximate_s(state=next_state), next_state)
                 self.w += self.alpha * (reward + discount * self.approximate_s(state=next_state) - self.approximate_s(state=state)) * self.get_w_gradient(state=state)
                 state = next_state
-                # if next_state in [6, 42] or steps > max_episode_length:
                 if next_state in [6, 42]:
                 #     print(reward)
                     break
-        return self.approximate_s()
+        vec = self.approximate_s()
+        vec[6] = 1
+        vec[42] = -1
+        return vec
 
 
 # =============================================================================================================
@@ -223,29 +224,31 @@ class PolicyIteration:
         self.value_function = None
         self.policy_function = None
 
-    def learn(self, threshold=0.1, patience=1e5):
+    def learn(self, threshold=0.01, patience=1e5):
         self.value_function = np.random.normal(size=49)
-        self.value_function[6] = 1
-        self.value_function[42] = -1
+        self.value_function[6] = 0
+        self.value_function[42] = 0
         stop = False
         run_count = 0
         while not stop and run_count < patience:
             run_count += 1
             stop = self.update_value_function(threshold=threshold)
-            self.value_function[6] = 1
-            self.value_function[42] = -1
+            self.value_function[6] = 0
+            self.value_function[42] = 0
         print(f"Iteration count at halt = {run_count}")
+        self.value_function[6] = 1
+        self.value_function[42] = -1
         return self.value_function
 
     def update_value_function(self, threshold=0.1):
         old_values = self.value_function.copy()
-        for state_index in range(49):
+        for state_index in set(range(49)) - {6, 42}:
             rewards_accumulated = []
             for action_index in range(4):
                 next_state, reward = find_next_state(state_index, action_index)
                 rewards_accumulated.append(reward + self.discount * old_values[next_state])
-            self.value_function[state_index] = np.array(rewards_accumulated).sum() * 0.25
-        stop = False
+            self.value_function[state_index] = sum(rewards_accumulated) * 0.25
+        stop = False if np.abs(old_values - self.value_function).any() > threshold else True
         return stop
 
 
@@ -263,6 +266,10 @@ if __name__ == '__main__':
     # v_func = agent.learn(discount=1, episodes=1000, max_episode_length=20)
     # visualize_results(v_func, "Semi-gradient TD(0) value function estimation")
     # print(v_func)
-    run_n(SGTD, n=100, alpha=0.1, w_size=2, discount=1, episodes=1000, max_episode_length=12)
+
+    # run_n(GradientMonteCarlo, n=10, alpha=0.25, w_size=2, discount=1, episodes=10000)
+
+    # agent = PolicyIteration(discount=1)
+    # v_func = agent.learn()
+    # visualize_results(v_func, "Policy iteration - exact values")
     pass
-    # todo: fix the policy iteration to put it in runs2
